@@ -1,7 +1,7 @@
 import logging
 from copy import copy
 from dataclasses import dataclass
-from operator import xor
+from typing import Optional
 
 from openpyxl.worksheet.worksheet import Worksheet as opxl_worksheet
 from openpyxl.chart.scatter_chart import ScatterChart as opxl_ScatterChart
@@ -17,73 +17,60 @@ from openpyxl.chart.data_source import (
 )
 from openpyxl.chart.trendline import Trendline as opxl_Trendline
 
-from DamaLib.common.excel.sheetformat.Coordinates import CellsCoordinates
-from DamaLib.common.utils.color import color_converter as cmn_color_conv
-from DamaLib.common.decorators.check import check_method_input
-from DamaLib.common.decorators.apply_to_dec import for_all_methods
-from DamaLib.common.decorators.debug import DebugClass
+from DamaLib.common.excel.sheetformat.Coordinates import CellsCoordinates, DMSelect
+from DamaLib.common.utils.color import ColorConverter as ColorConverter
+from DamaLib.common.decorators.check import check_method_input, check_dataclass_input
 
 
 log = logging.getLogger(__name__)
 
-
+@check_dataclass_input
 @dataclass
 class ChartFormat:
-    title: str = "Title"
-    style: int = 13
-    x_axis_title: str = "x_axis title"
-    y_axis_title: str = "y_axis tile"
-    x_axis_majorGridlines = None
-    y_axis_majorGridlines = None
+    title: Optional[str] = "Title"
+    style: Optional[int|float] = 13
+    x_axis_title: Optional[str] = "x_axis title"
+    y_axis_title: Optional[str] = "y_axis tile"
+    x_axis_majorGridlines: Optional[bool] = None
+    y_axis_majorGridlines: Optional[bool] = None
 
+    def __post_init__(self):
+        pass    
 
+@check_dataclass_input
 @dataclass
 class SeriesData:
-    """
-    _axis: [_axis_start_cell:str, _axis_end_cell:str]
-    X_axis: only one row/column can be selected
-    """
-
-    x_ws: opxl_worksheet
-    X_axis: list
-    y_ws: opxl_worksheet
-    Y_axis: list
+    X_axis: DMSelect
+    Y_axis: DMSelect
     title_from_data: bool = True
 
+    def __post_init__(self):
+        pass
 
+@check_dataclass_input
 @dataclass
 class SerieFormat:
-    serie_title: str = None
-    marker_shape: str = None
-    marker_size: int | float = None
-    marker_color: str = None
+    serie_title: Optional[str] = None
+    marker_shape: Optional[str] = None
+    marker_size: Optional[int | float] = None
+    marker_color: Optional[str] = None
     hide_lines: bool = True
 
     def __post_init__(self):
-        if self.marker_color != None:
-            self.marker_color = cmn_color_conv(self.marker_color).hexaCode()
+        if not self.marker_color == None:
+            self.marker_color = ColorConverter(self.marker_color).hexaCode()
 
-
+@check_dataclass_input
 @dataclass
 class ErrorData:
-    """
-    cust_Data = [start_cell:str, end_cell:str]
-    """
-
-    err_Val: int | float = None
-    cust_Errmin_ws: opxl_worksheet = None
-    cust_Errmin_Data: list = None
-    cust_Errmax_ws: opxl_worksheet = None
-    cust_Errmax_Data: list = None
+    err_Val: Optional[int | float] = None
+    cust_Errmin: Optional[DMSelect] = None
+    cust_Errmax: Optional[DMSelect] = None
 
     def __post_init__(self):
-        if xor(self.cust_Errmax_Data is not None, self.cust_Errmax_ws is not None):
-            raise ValueError("Value missing")
+        pass
 
-        if xor(self.cust_Errmin_Data is not None, self.cust_Errmin_ws is not None):
-            raise ValueError("Value missing")
-
-
+@check_dataclass_input
 @dataclass
 class ErrorFormat:
     """
@@ -98,24 +85,21 @@ class ErrorFormat:
     No_endCap: bool = False
 
     def __post_init__(self):
-        if self.err_Dir not in {"x", "y"}:
-            raise ValueError("err_Dir must be one of {'x', 'y'}")
+        errDir =('x', 'y')
+        if not self.err_Dir in errDir:
+            raise ValueError(f"err_Dir must be one of {errDir=}")
 
-        if self.err_Bar_Type not in {"minus", "both", "plus"}:
-            raise ValueError("err_Bar_Type must be one of {'minus','both','plus'}")
+        errBarType = ("minus", "both", "plus")
+        if not self.err_Bar_Type in errBarType:
+            raise ValueError(f"err_Bar_Type must be one of {errBarType=}")
 
-        if self.err_val_type not in {
-            "fixedVal",
-            "cust",
-            "stdDev",
-            "percentage",
-            "stdErr",
-        }:
+        errValType = ("fixedVal", "cust", "stdDev","percentage","stdErr")
+        if not self.err_val_type in errValType:
             raise ValueError(
-                "err_val_type must be one of {'fixedVal', 'cust', 'stdDev', 'percentage', 'stdErr'}"
+                f"err_val_type must be one of {errValType=}"
             )
 
-
+@check_dataclass_input
 @dataclass
 class TrendLine:
     """
@@ -125,37 +109,65 @@ class TrendLine:
     trendline_Type: str
     disp_Eq: bool = False
     disp_RSqr: bool = False
-    intercept: int | float | None = None
-    order: int | None = None
-    period: int | None = None
+    intercept: Optional[int | float] = None
+    order: Optional[int] = None
+    period: Optional[int] = None
 
     def __post_init__(self):
-        if self.trendline_Type not in {
-            "poly",
-            "power",
-            "exp",
-            "log",
-            "movingAvg",
-            "linear",
-        }:
+        trendlineType = ("poly", "power", "exp", "log", "movingAvg", "linear")
+        if not self.trendline_Type in trendlineType:
             raise ValueError(
-                "trenline_type: must be one of {'poly', 'power', 'exp', 'log', 'movingAvg', 'linear'}"
+                f"trenline_type: must be one of {trendlineType}"
             )
 
+class Charts(object):
+    def __init__(self) -> None:
+        self._chartFormat = ChartFormat
+        self._serieFormat = SerieFormat
+        self._errFormat = ErrorFormat
+        self._validechartformat = (opxl_ScatterChart, opxl_BarChart, opxl_LineChart)
 
-# @DebugClass('__init__')
-@for_all_methods(check_method_input(("",)), "")
-class charts(CellsCoordinates):
-    def __init__(self, worksheet: opxl_worksheet) -> None:
-        super().__init__(worksheet)
+    @property
+    def chart_format(self):
+        return self._chartFormat
 
+    @check_method_input('')
+    @chart_format.setter
+    def chart_format(self, format:ChartFormat):
+        self._chartFormat = format
+
+    @property
+    def serie_format(self):
+        return self._serieFormat
+
+    @check_method_input('')
+    @serie_format.setter
+    def serie_format(self, format:SerieFormat):
+        self._serieFormat = format
+
+    @property
+    def error_format(self):
+        return self._errFormat
+
+    @check_method_input('')
+    @error_format.setter
+    def error_format(self, format: ErrorFormat):
+        self._errFormat = format
+
+    @check_method_input('')
     def create_chart(
-        self, chart_type: str, position: str
+        self, chart_type: str, worksheet: opxl_worksheet, position: str
     ) -> opxl_ScatterChart | opxl_BarChart | opxl_LineChart:
         """
         chart_type must be one of('LineChart', 'BarChart', 'ScatterChart')
         Position : cell coordinate of chart's top-left corner
         """
+        if not CellsCoordinates._isValidExcelWorksheet(worksheet):
+            raise TypeError("Worksheet type error")
+
+        if not CellsCoordinates._isValidExcelCell(position):
+            raise Exception('Cell coordinate not valid')
+
         match chart_type:
             case "ScatterChart":
                 c = opxl_ScatterChart()
@@ -166,65 +178,61 @@ class charts(CellsCoordinates):
             case _:
                 raise ValueError("Chart type incorrect or none implemented")
 
-        if self._isValidExcelCell(position) == False:
-            raise ValueError("Chart position invalid")
+        c.title = self.chart_format.title
+        c.style = self.chart_format.style
+        c.x_axis.title = self.chart_format.x_axis_title
+        c.y_axis.title = self.chart_format.y_axis_title
+        c.x_axis.majorGridlines = self.chart_format.x_axis_majorGridlines
+        c.y_axis.majorGridlines = self.chart_format.y_axis_majorGridlines
 
-        self.worksheet.add_chart(c, position)
-        return c
+        worksheet.add_chart(c, position)
+        return c        
 
-    def set_chart_format(
-        self,
-        c: opxl_ScatterChart | opxl_BarChart | opxl_LineChart,
-        chartFormat: ChartFormat,
-    ):
-        c.title = chartFormat.title
-        c.style = chartFormat.style
-        c.x_axis.title = chartFormat.x_axis_title
-        c.y_axis.title = chartFormat.y_axis_title
-        c.x_axis.majorGridlines = chartFormat.x_axis_majorGridlines
-        c.y_axis.majorGridlines = chartFormat.y_axis_majorGridlines
-
-    def add_serie_to_chart(
-        self, c: opxl_ScatterChart | opxl_BarChart | opxl_LineChart, SData: SeriesData
+    @check_method_input('')
+    @staticmethod
+    def add_series_to_chart(
+        c: opxl_ScatterChart | opxl_BarChart | opxl_LineChart, SData: SeriesData
     ) -> opxl_XYSeries:
 
         # Get x values
-        xvalues = self._setSerieValue(SData.x_ws, SData.X_axis)
+        xvalues = Charts._setSerieValue(SData.X_axis)
 
         # Get y values
-        yvalues = self._setSerieValue(SData.y_ws, SData.Y_axis)
+        yvalues = Charts._setSerieValue(SData.Y_axis)
 
         series = opxl_chart_SeriesFactory(
             yvalues, xvalues, title_from_data=SData.title_from_data
         )
         c.series.append(series)
 
+    @check_method_input('')
+    @staticmethod
     def get_series_from_chart(
-        self, c: opxl_ScatterChart | opxl_BarChart | opxl_LineChart
+        c: opxl_ScatterChart | opxl_BarChart | opxl_LineChart
     ) -> opxl_XYSeries:
         """
         Return series from chart
         """
         return c.series
 
-    def set_serie_format(self, serie: opxl_XYSeries, Sformat: SerieFormat) -> None:
+    @check_method_input('')
+    def apply_format_to_serie(self, serie: opxl_XYSeries) -> None:
         """
         serie = chart.series[i]
         """
-        serie.title = Sformat.serie_title
-        serie.marker.symbol = Sformat.marker_shape
-        serie.marker.size = Sformat.marker_size
+        serie.title = self.serie_format.serie_title
+        serie.marker.symbol = self.serie_format.marker_shape
+        serie.marker.size = self.serie_format.marker_size
         serie.marker.graphicalProperties.solidFill = (
-            Sformat.marker_color
+            self.serie_format.marker_color
         )  # Marker filling
         serie.marker.graphicalProperties.line.solidFill = (
-            Sformat.marker_color
+            self.serie_format.marker_color
         )  # Marker outline
-        serie.graphicalProperties.line.noFill = Sformat.hide_lines  # hide lines
+        serie.graphicalProperties.line.noFill = self.serie_format.hide_lines  # hide lines
 
-    def add_serie_error_bar(
-        self, serie: opxl_XYSeries, errData: ErrorData, errFormat: ErrorFormat
-    ):
+    @check_method_input('')
+    def add_to_serie_error_bars(self, serie: opxl_XYSeries, errData: ErrorData):
         """
         serie: series[i]
 
@@ -232,49 +240,41 @@ class charts(CellsCoordinates):
         if {'fixedVal', 'stdDev', 'percentage'} used, specified err_Val
         if {'cust'} used, specified cust_Errmin_List and/or cust_Errmax_List
         """
-        # Set error type
-        MinusNumDataSource = None
-        PlusNumeDataSource = None
-        err_Val = None
+        match self.error_format.err_val_type:
+            case 'cust':
+                err_Val = None
+                match self.error_format.err_Bar_Type:
+                    case "minus":
+                        Minus = Charts._setSerieValue(errData.cust_Errmin)
+                        MinusNumDataSource = opxl_NumDataSource(opxl_NumRef(Minus))
+                    case "plus":
+                        Plus = Charts._setSerieValue(errData.cust_Errmax)
+                        PlusNumeDataSource = opxl_NumDataSource(opxl_NumRef(Plus))
+                    case "both":
+                        Minus = Charts._setSerieValue(errData.cust_Errmin)
+                        MinusNumDataSource = opxl_NumDataSource(opxl_NumRef(Minus))
 
-        if errFormat.err_val_type in {"fixedVal", "stdDev", "percentage"}:
-            err_Val = errData.err_Val
-
-        if errFormat.err_val_type == "cust":
-            match errFormat.err_Bar_Type:
-                case "minus":
-                    Minus = self._setSerieValue(
-                        errData.cust_Errmin_ws, errData.cust_Errmin_Data
-                    )
-                    MinusNumDataSource = opxl_NumDataSource(opxl_NumRef(Minus))
-                case "plus":
-                    Plus = self._setSerieValue(
-                        errData.cust_Errmax_ws, errData.cust_Errmax_Data
-                    )
-                    PlusNumeDataSource = opxl_NumDataSource(opxl_NumRef(Plus))
-                case "both":
-                    Minus = self._setSerieValue(
-                        errData.cust_Errmin_ws, errData.cust_Errmin_Data
-                    )
-                    MinusNumDataSource = opxl_NumDataSource(opxl_NumRef(Minus))
-
-                    Plus = self._setSerieValue(
-                        errData.cust_Errmax_ws, errData.cust_Errmax_Data
-                    )
-                    PlusNumeDataSource = opxl_NumDataSource(opxl_NumRef(Plus))
+                        Plus = Charts._setSerieValue(errData.cust_Errmax)
+                        PlusNumeDataSource = opxl_NumDataSource(opxl_NumRef(Plus))
+            case _:
+                MinusNumDataSource = None
+                PlusNumeDataSource = None
+                err_Val = errData.err_Val
 
         # Add error to serie
         serie.errBars = opxl_ErrorBars(
-            errDir=errFormat.err_Dir,
-            errBarType=errFormat.err_Bar_Type,
-            errValType=errFormat.err_val_type,
-            noEndCap=errFormat.No_endCap,
+            errDir= self.error_format.err_Dir,
+            errBarType= self.error_format.err_Bar_Type,
+            errValType= self.error_format.err_val_type,
+            noEndCap= self.error_format.No_endCap,
             val=err_Val,
             minus=MinusNumDataSource,
             plus=PlusNumeDataSource,
         )
 
-    def add_trendline_to_serie(self, serie: opxl_XYSeries, TL: TrendLine):
+    @check_method_input('')
+    @staticmethod
+    def add_trendline_to_serie(serie: opxl_XYSeries, TL: TrendLine):
         """
         serie: serie = series[i]
         """
@@ -287,38 +287,45 @@ class charts(CellsCoordinates):
             period=TL.period,
         )
 
+    @check_method_input('')
+    @staticmethod
     def fuse2charts(
-        self,
         ch_1: opxl_ScatterChart | opxl_BarChart | opxl_LineChart,
         ch_2: opxl_ScatterChart | opxl_BarChart | opxl_LineChart,
+        worksheet:opxl_worksheet,
         position: str,
     ):
         """
         Display y-axis of the second chart on the right by setting it to cross the x-axis at its maximum
         """
-        if type(ch_1) != type(ch_2):
+        if not type(ch_1) == type(ch_2):
             raise TypeError("Chart type error")
 
         c = copy(ch_1)
         c2 = copy(ch_2)
         c.y_axis.crosses = "max"
         c += c2
-        self.worksheet.add_chart(c, position)
+
+        if not CellsCoordinates._isValidExcelWorksheet(worksheet):
+            raise TypeError("Worksheet type error")
+
+        if not CellsCoordinates._isValidExcelCell(position):
+            raise Exception('Cell coordinate not valid')
+
+        worksheet.add_chart(c, position)
 
         return c
 
-    def _setSerieValue(
-        self, ws: opxl_worksheet, cells_range: list
-    ) -> opxl_chart_Reference:
-        self.worksheet = ws
-        self.set_cells(cells_range)
+    @staticmethod
+    def _setSerieValue(axis_datas: DMSelect) -> opxl_chart_Reference:
+        axis = CellsCoordinates.set_up_selection(axis_datas)
 
         values = opxl_chart_Reference(
-            self.worksheet,
-            min_col=self.cols_range.start,
-            min_row=self.rows_range.start,
-            max_col=self.cols_range.stop - 1,
-            max_row=self.rows_range.stop - 1,
+            axis.worksheet,
+            min_col=axis.columns_range.start,
+            min_row=axis.rows_range.start,
+            max_col=axis.columns_range.stop - 1,
+            max_row=axis.rows_range.stop - 1,
         )
 
         return values

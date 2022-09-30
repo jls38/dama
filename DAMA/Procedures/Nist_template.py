@@ -1,7 +1,7 @@
 import logging 
 from os import path
 
-from pandas import DataFrame as pd_DataFrame
+#from pandas import DataFrame as pd_DataFrame
 
 from DamaLib.common.filesIO.getPathFromDialog import GetPathFromDialog, open_properties, saveas_properties
 from DamaLib.common.filesIO.createfile import CreateFile, xlsx_properties as create_xl_prop
@@ -10,14 +10,14 @@ from DamaLib.common.excel.workbook.xlfile import xlfile
 
 log = logging.getLogger(__name__)
 
-class generator (object):
+class Generator(object):
     def __init__(self) -> None:
         """Fichier(s) importé(s)"""
         self.df = None
         """Fichier(s) sortie(s)"""
         self.out_fpath = ""
 
-    def recette (self):
+    def recette(self) -> None:
         """Application de la recette"""
         log.info("Debut recette")
 
@@ -25,7 +25,7 @@ class generator (object):
 
         log.info("Fin recette")
 
-    def generate_xl (self) -> None:
+    def generate_xl(self) -> None:
         log.info('f_1: Start')
         """Importation des feuilles de calcul"""
         LoadDataframe.pathList = GetPathFromDialog().openfiles('Load files')
@@ -36,10 +36,13 @@ class generator (object):
         CreateFile.filepath = GetPathFromDialog().saveas('Create file')
         self.out_fpath = CreateFile().create()
 
+        '''
         for key in filesDict.keys():
             name = path.splitext(key)[0]
-            print('name: ',name)
             xlfile.add_to_xlsx(self.out_fpath, name, filesDict[key], 0, 0, Header=True)
+        '''
+
+        [xlfile.add_to_xlsx(self.out_fpath, path.splitext(key)[0], filesDict[key], 0, 0, Header=True) for key in filesDict.keys()]
 
         xlfile.remove_sheet(self.out_fpath, 'Sheet1')
 
@@ -47,9 +50,4 @@ class generator (object):
 
     def f_2 (self) -> None:
         log.info('f_2: Start')
-        
-
-
         log.info('f_2: Done')
-
-        

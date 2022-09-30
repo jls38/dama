@@ -1,7 +1,7 @@
 import logging 
 from functools import wraps
 
-def DebugMethod (method):
+def debug_method (method):
     @wraps(method)
     def decorated (*args, **kwargs):
         log = logging.getLogger(method.__module__)
@@ -10,10 +10,13 @@ def DebugMethod (method):
         return res
     return decorated
 
-def DebugClass(exclude):
+def debug_class(exclude):
     def decorateclass(cls):
+        [setattr(cls, attr, debug_method(getattr(cls, attr))) for attr in cls.__dict__ if attr not in exclude]
+        '''
         for attr in cls.__dict__:
             if attr not in exclude:
                 setattr(cls, attr, DebugMethod(getattr(cls, attr)))
+        '''
         return cls        
     return decorateclass

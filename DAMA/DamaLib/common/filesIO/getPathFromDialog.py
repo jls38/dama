@@ -4,7 +4,7 @@ import tkinter as tk
 from tkinter import filedialog as tk_fd
 from typing import Iterable
 
-from DamaLib.common.decorators.check import check_method_input
+from DamaLib.common.decorators.check import check_method_input, check_dataclass_input
 
 log = logging.getLogger(__name__)
 
@@ -35,7 +35,7 @@ class GetPathFromDialog (object):
     def saveas_prop(self) -> saveas_properties:
         return self._saveas_prop
     
-    @check_method_input(('',))
+    @check_method_input('')
     @saveas_prop.setter
     def saveas_prop(self, prop:saveas_properties) -> None:
         self._saveas_prop = prop
@@ -44,12 +44,12 @@ class GetPathFromDialog (object):
     def open_prop(self) -> open_properties:
         return self._open_prop
     
-    @check_method_input(('',))
+    @check_method_input('')
     @open_prop.setter
     def open_prop(self, prop:open_properties) -> None:
         self._open_prop = prop
     
-    @check_method_input(('',))
+    @check_method_input('')
     def openfiles(self, label:str) -> list[str]:
         if not self._isOpenPropDefined():
             prop = open_properties()
@@ -72,7 +72,7 @@ class GetPathFromDialog (object):
 
         return pathList
 
-    @check_method_input(('',))
+    @check_method_input('')
     def openfile(self, label:str) -> str:
         if not self._isOpenPropDefined():
             prop = open_properties()
@@ -95,7 +95,7 @@ class GetPathFromDialog (object):
             
         return path
 
-    @check_method_input(('',))
+    @check_method_input('')
     def saveas (self, label:str)-> str:
         if not self._isSaveasPropDefined():
             prop = saveas_properties()

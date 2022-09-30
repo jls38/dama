@@ -13,7 +13,7 @@ class Color(IntEnum):
     WHITE = 6
     YELLOW = 7
 
-class color_converter(object):
+class ColorConverter(object):
     def __init__(self, name:str|Color) -> None:
         self.name = name
 
